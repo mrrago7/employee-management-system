@@ -9,3 +9,8 @@ class Employee(db.Model):
     hire_date=db.Column(db.Date, nullable=False)
     salary=db.Column(db.Numeric(precision=10, scale=2))
     manager_id=db.Column(db.Integer, db.ForeignKey("employees.id"), nullable=True)
+
+    manager=db.relationship("Employee", remote_side="Employee.id", back_populates="subordinates")
+    subordinates=db.relationship("Employee", back_populates="manager")
+
+
