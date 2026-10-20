@@ -1,7 +1,8 @@
 from mimesis import Person, Generic
 import random
 from models import Employee
-from app import app, db
+from extensions import db
+from app import app
 
 ceo_salary=[250000, 400000]
 manager_salary=[100000, 160000]

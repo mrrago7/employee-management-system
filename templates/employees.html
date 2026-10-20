@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employees</title>
+</head>
+<body>
+    <h1>Employee List</h1>
+
+    <p>Number of employees: {{ employees|length }}</p>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Position</th>
+            <th>Hire Date</th>
+            <th>Salary</th>
+            <th>Manager ID</th>
+        </tr>
+
+        {% for employee in employees %}
+        <tr>
+            <td>{{ employee.id }}</td>
+            <td>{{ employee.full_name }}</td>
+            <td>{{ employee.position }}</td>
+            <td>{{ employee.hire_date }}</td>
+            <td>{{ employee.salary }}</td>
+            <td>{{ employee.manager_id }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
