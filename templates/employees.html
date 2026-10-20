@@ -6,6 +6,12 @@
 <body>
     <h1>Employee List</h1>
 
+    <form method="GET" action="/employees">
+        <input type="text" name="search" value="{{ search }}" placeholder="Enter employee name">
+        <button type="submit">Search</button>
+        <a href="/employees">Reset</a>
+    </form>
+
     <p>Number of employees: {{ employees|length }}</p>
 
     <table border="1">
