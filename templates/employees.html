@@ -7,8 +7,23 @@
     <h1>Employee List</h1>
 
     <form method="GET" action="/employees">
-        <input type="text" name="search" value="{{ search }}" placeholder="Enter employee name">
-        <button type="submit">Search</button>
+        <label for="search">Search by name:</label>
+        <input type="text" name="search" id="search" value="{{ search }}" placeholder="Enter employee name">
+
+        <label for="sort">Sort by:</label>
+        <select name="sort" id="sort">
+            <option value="">No sorting</option>
+            <option value="salary" {% if sort_fields and sort_fields[0] == 'salary' %}selected{% endif %}>Salary</option>
+            <option value="hire_date" {% if sort_fields and sort_fields[0] == 'hire_date' %}selected{% endif %}>Hire Date</option>
+        </select>
+
+        <label for="order">Order:</label>
+        <select name="order" id="order">
+            <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+            <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+        </select>
+
+        <button type="submit">Apply</button>
         <a href="/employees">Reset</a>
     </form>
 

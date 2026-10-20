@@ -23,6 +23,22 @@ def get_employees():
         Employee.full_name.ilike(f"%{search_splitted[0]}%"),
         Employee.full_name.ilike(f"%{search_splitted[1]}%")))
 
+
+    order=request.args.get("order", "asc")
+    sort_fields = request.args.getlist("sort")
+    allowed_fields = {"salary": Employee.salary,"hire_date": Employee.hire_date}
+
+    for field in sort_fields:
+        if field in allowed_fields:
+            column = allowed_fields[field]
+
+            if order == "desc":
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+
+
     employees=db.session.execute(query).scalars().all()
-    return render_template("employees.html", employees=employees)
+
+    return render_template("employees.html",employees=employees,search=search,sort_fields=sort_fields,order=order)
 
