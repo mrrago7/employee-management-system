@@ -11,7 +11,7 @@ db.init_app(app)
 
 @app.route("/employees", methods=['GET'])
 def get_employees():    
-    search = request.args.get("search", "")
+    search = " ".join(request.args.get("search", "").split())
     query=db.select(Employee)
 
     search_splitted=search.split(" ")
@@ -24,9 +24,13 @@ def get_employees():
         Employee.full_name.ilike(f"%{search_splitted[0]}%"),
         Employee.full_name.ilike(f"%{search_splitted[1]}%")))
 
+    elif len(search_splitted) > 2:
+        query = query.where(db.false()) 
 
     order=request.args.get("order", "asc")
+
     sort_fields = request.args.getlist("sort")
+
     allowed_fields = {"salary": Employee.salary,"hire_date": Employee.hire_date}
 
     for field in sort_fields:
