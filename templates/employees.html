@@ -1,54 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Employees</title>
+    <meta charset="UTF-8">
+    <title>Список сотрудников</title>
 </head>
 <body>
-    <h1>Employee List</h1>
+    <h1>Список сотрудников</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <p>Сотрудников на странице: {{ employees|length }}</p>
 
     <form method="GET" action="/employees">
-        <label for="search">Search by name:</label>
-        <input type="text" name="search" id="search" value="{{ search }}" placeholder="Enter employee name">
+        <label for="search">Поиск по ФИО:</label>
+        <input type="text" id="search" name="search" value="{{ search }}">
 
-        <label for="sort">Sort by:</label>
-        <select name="sort" id="sort">
-            <option value="">No sorting</option>
-            <option value="salary" {% if sort_fields and sort_fields[0] == 'salary' %}selected{% endif %}>Salary</option>
-            <option value="hire_date" {% if sort_fields and sort_fields[0] == 'hire_date' %}selected{% endif %}>Hire Date</option>
+        <label for="sort">Сортировка:</label>
+        <select id="sort" name="sort">
+            <option value="" {% if not sort_fields %}selected{% endif %}>Без сортировки</option>
+            <option value="salary" {% if "salary" in sort_fields %}selected{% endif %}>По зарплате</option>
+            <option value="hire_date" {% if "hire_date" in sort_fields %}selected{% endif %}>По дате найма</option>
         </select>
 
-        <label for="order">Order:</label>
-        <select name="order" id="order">
-            <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
-            <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+        <label for="order">Порядок:</label>
+        <select id="order" name="order">
+            <option value="asc" {% if order == "asc" %}selected{% endif %}>По возрастанию</option>
+            <option value="desc" {% if order == "desc" %}selected{% endif %}>По убыванию</option>
         </select>
 
-        <button type="submit">Apply</button>
-        <a href="/employees">Reset</a>
+        <button type="submit">Применить</button>
+        <a href="/employees">Сбросить</a>
     </form>
 
-    <p>Number of employees: {{ employees|length }}</p>
-
     <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Position</th>
-            <th>Hire Date</th>
-            <th>Salary</th>
-            <th>Manager ID</th>
-        </tr>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ФИО</th>
+                <th>Должность</th>
+                <th>Дата найма</th>
+                <th>Зарплата</th>
+                <th>ID руководителя</th>
+                <th>Изменить руководителя</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+                <tr>
+                    <td>{{ employee.id }}</td>
+                    <td>{{ employee.full_name }}</td>
+                    <td>{{ employee.position }}</td>
+                    <td>{{ employee.hire_date }}</td>
+                    <td>{{ employee.salary }}</td>
+                    <td>{{ employee.manager_id or "Нет" }}</td>
+                    <td>
+                        {% if employee.position == "CEO" %}
+                            Нет руководителя
+                        {% else %}
+                            <form method="POST"
+                                  action="/employees/{{ employee.id }}/manager"
+                                  class="manager-form">
+                                <input type="text"
+                                       class="manager-search"
+                                       placeholder="Введите имя..."
+                                       autocomplete="off"
+                                       required>
 
-        {% for employee in employees %}
-        <tr>
-            <td>{{ employee.id }}</td>
-            <td>{{ employee.full_name }}</td>
-            <td>{{ employee.position }}</td>
-            <td>{{ employee.hire_date }}</td>
-            <td>{{ employee.salary }}</td>
-            <td>{{ employee.manager_id }}</td>
-        </tr>
-        {% endfor %}
+                                <input type="hidden"
+                                       name="manager_id"
+                                       class="manager-id">
+
+                                <button type="submit">Изменить</button>
+                                <div class="manager-results"></div>
+                                <div class="selected-manager"></div>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
+
+    <div>
+        {% if pagination.has_prev %}
+            <a href="{{ url_for('get_employees', page=pagination.prev_num, search=search, sort=sort_fields, order=order) }}">Назад</a>
+        {% endif %}
+
+        Страница {{ pagination.page }} из {{ pagination.pages }}
+
+        {% if pagination.has_next %}
+            <a href="{{ url_for('get_employees', page=pagination.next_num, search=search, sort=sort_fields, order=order) }}">Вперёд</a>
+        {% endif %}
+    </div>
+
+    <script>
+        document.querySelectorAll(".manager-form").forEach(form => {
+            const searchInput = form.querySelector(".manager-search");
+            const managerIdInput = form.querySelector(".manager-id");
+            const results = form.querySelector(".manager-results");
+            const selectedManager = form.querySelector(".selected-manager");
+
+            let timeout;
+
+            searchInput.addEventListener("input", () => {
+                clearTimeout(timeout);
+                managerIdInput.value = "";
+                selectedManager.textContent = "";
+                results.replaceChildren();
+
+                const search = searchInput.value.trim();
+
+                if (search.length < 3) {
+                    return;
+                }
+
+                timeout = setTimeout(async () => {
+                    const match = form.action.match(/employees\/(\d+)\/manager/);
+                    const employeeId = match[1];
+
+                    try {
+                        const response = await fetch(
+                            `/api/managers?search=${encodeURIComponent(search)}&employee_id=${employeeId}`
+                        );
+
+                        if (!response.ok) {
+                            throw new Error("Search request failed");
+                        }
+
+                        const data = await response.json();
+
+                        data.managers.forEach(manager => {
+                            const option = document.createElement("button");
+                            option.type = "button";
+                            option.textContent = `${manager.full_name} — ${manager.position}`;
+
+                            option.addEventListener("click", () => {
+                                searchInput.value = manager.full_name;
+                                managerIdInput.value = manager.id;
+                                selectedManager.textContent = `Выбран: ${manager.full_name}`;
+                                results.replaceChildren();
+                            });
+
+                            results.appendChild(option);
+                        });
+
+                        if (data.managers.length === 0) {
+                            results.textContent = "Совпадений не найдено";
+                        }
+                    } catch (error) {
+                        results.textContent = "Ошибка поиска. Попробуйте ещё раз.";
+                    }
+                }, 300);
+            });
+
+            form.addEventListener("submit", event => {
+                if (!managerIdInput.value) {
+                    event.preventDefault();
+                    alert("Сначала выберите руководителя из найденного списка.");
+                }
+            });
+        });
+    </script>
 </body>
 </html>
