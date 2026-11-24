@@ -10,38 +10,54 @@ db.init_app(app)
 
 
 @app.route("/employees", methods=['GET'])
-def get_employees():    
+def get_employees():
     search = " ".join(request.args.get("search", "").split())
-    query=db.select(Employee)
+    query = db.select(Employee)
 
-    search_splitted=search.split(" ")
+    search_splitted = search.split(" ")
 
-    if len(search_splitted)==1:
-        query=query.where(Employee.full_name.ilike(f"%{search}%"))
+    if len(search_splitted) == 1:
+        query = query.where(Employee.full_name.ilike(f"%{search}%"))
 
-    elif len(search_splitted)==2:
+    elif len(search_splitted) == 2:
         query = query.where(db.and_(
-        Employee.full_name.ilike(f"%{search_splitted[0]}%"),
-        Employee.full_name.ilike(f"%{search_splitted[1]}%")))
+            Employee.full_name.ilike(f"%{search_splitted[0]}%"),
+            Employee.full_name.ilike(f"%{search_splitted[1]}%")
+        ))
 
     elif len(search_splitted) > 2:
-        query = query.where(db.false()) 
+        query = query.where(db.false())
 
-    order=request.args.get("order", "asc")
-
+    order = request.args.get("order", "asc")
     sort_fields = request.args.getlist("sort")
 
-    allowed_fields = {"salary": Employee.salary,"hire_date": Employee.hire_date}
+    allowed_fields = {
+        "full_name": Employee.full_name,
+        "position": Employee.position,
+        "salary": Employee.salary,
+        "hire_date": Employee.hire_date
+    }
+
+    position_order = db.case(
+        (Employee.position == "Developer", 1),
+        (Employee.position == "Senior Developer", 2),
+        (Employee.position == "Team Lead", 3),
+        (Employee.position == "Manager", 4),
+        (Employee.position == "CEO", 5),
+        else_=0
+    )
 
     for field in sort_fields:
         if field in allowed_fields:
-            column = allowed_fields[field]
+            if field == "position":
+                column = position_order
+            else:
+                column = allowed_fields[field]
 
             if order == "desc":
                 query = query.order_by(column.desc())
             else:
                 query = query.order_by(column.asc())
-
 
     page = request.args.get("page", 1, type=int)
 

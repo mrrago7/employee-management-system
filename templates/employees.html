@@ -22,6 +22,8 @@
         <label for="sort">Сортировка:</label>
         <select id="sort" name="sort">
             <option value="" {% if not sort_fields %}selected{% endif %}>Без сортировки</option>
+            <option value="full_name" {% if "full_name" in sort_fields %}selected{% endif %}>По ФИО</option>
+            <option value="position" {% if "position" in sort_fields %}selected{% endif %}>По должности</option>
             <option value="salary" {% if "salary" in sort_fields %}selected{% endif %}>По зарплате</option>
             <option value="hire_date" {% if "hire_date" in sort_fields %}selected{% endif %}>По дате найма</option>
         </select>
@@ -44,7 +46,7 @@
                 <th>Должность</th>
                 <th>Дата найма</th>
                 <th>Зарплата</th>
-                <th>ID руководителя</th>
+                <th>Руководитель</th>
                 <th>Изменить руководителя</th>
             </tr>
         </thead>
@@ -56,7 +58,9 @@
                     <td>{{ employee.position }}</td>
                     <td>{{ employee.hire_date }}</td>
                     <td>{{ employee.salary }}</td>
-                    <td>{{ employee.manager_id or "Нет" }}</td>
+                    <td>
+                        {{ employee.manager.full_name if employee.manager else "Нет" }}
+                    </td>
                     <td>
                         {% if employee.position == "CEO" %}
                             Нет руководителя
