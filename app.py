@@ -14,19 +14,15 @@ def get_employees():
     search = " ".join(request.args.get("search", "").split())
     query = db.select(Employee)
 
-    search_splitted = search.split(" ")
+    if search:
+        search_words = search.split()
 
-    if len(search_splitted) == 1:
-        query = query.where(Employee.full_name.ilike(f"%{search}%"))
+        conditions = [
+            Employee.full_name.ilike(f"%{word}%")
+            for word in search_words
+        ]
 
-    elif len(search_splitted) == 2:
-        query = query.where(db.and_(
-            Employee.full_name.ilike(f"%{search_splitted[0]}%"),
-            Employee.full_name.ilike(f"%{search_splitted[1]}%")
-        ))
-
-    elif len(search_splitted) > 2:
-        query = query.where(db.false())
+        query = query.where(db.and_(*conditions))
 
     order = request.args.get("order", "asc")
     sort_fields = request.args.getlist("sort")
